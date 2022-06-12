@@ -1,0 +1,7 @@
+*__pycache__
+*.ipynb_checkpoints
+.ipynb_checkpoints
+*.idea
+*.pt
+*.ckpt
+*.bin
