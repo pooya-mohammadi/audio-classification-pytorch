@@ -11,7 +11,7 @@ class BasicConfig:
 
 class Config(BasicConfig):
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    epochs = 100
+    epochs = 50
     batch_size = 32
     sample_rate = 8_000
     num_classes = 2
