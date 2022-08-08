@@ -13,17 +13,17 @@ be used for any other classification by changing the number of classes and the i
     1. main implementation is taken from [AnubhavGupta3377](https://github.com/AnubhavGupta3377)'s repo
        called [Text-Classification-Models-Pytorch](https://github.com/AnubhavGupta3377/Text-Classification-Models-Pytorch)
     2. It's modified to train audio samples.
-3. wav2vec2: Finetuning wav2vec2-base as an audio classification model using huggingface trainer.
+3. wav2vec2: Fine-tuning wav2vec2-base as an audio classification model using huggingface trainer.
 
 # Result on Gender Recognition
 
 Trained and evaluated on a custom dataset. You can simply download common-voice dataset and use the samples.
 
 Model | Train ACC | Val Acc | Train F1-score | Val-F1-score |
---- |-----------|-------------|----------------|-------------|
+---|-----------|-------------|----------------|-------------|
 LSTM | 89        | 90 | 90.83          | 91 |
-Wav2vec2 | -         | 96.4| -              | 96.4
-transfomer | 85.1 | 81.7| 87.1| 84.6
+Wav2vec2 | -         | 96.4| -              | 96.4 |
+transfomer | 85.1 | 81.7| 87.1| 84.6 |
 
 # references:
 
