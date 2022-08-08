@@ -26,7 +26,7 @@ class BasicConfig:
         self.model_path = mkdir_incremental(self.save_path)
         self.best_path = join(self.model_path, self.file_name)
         os.makedirs(self.best_path, exist_ok=True)
-        self.label2id_path = join(self.model_path, self.file_name, "label2id_path.pkl")
+        self.label2id_path = join(self.model_path, self.file_name, "label2id.pkl")
 
 
 @dataclass(init=True)
