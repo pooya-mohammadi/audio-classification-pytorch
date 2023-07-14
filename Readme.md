@@ -7,11 +7,11 @@ be used for any other classification by changing the number of classes and the i
 Dataset should be a csv file that has two columns: `audio_path` and `lable`.
 ```
                                           audio_path   label
-0  /home/ai/projects/speech/dataset/asr/new-raw-d...  female
-1  /home/ai/projects/speech/dataset/asr/samples_0...  male
-2  /home/ai/projects/speech/dataset/asr/new-raw-d...  female
-3  /home/ai/projects/speech/dataset/asr/new-raw-d...  male
-4  /home/ai/projects/speech/dataset/asr/new-raw-d...  female
+0  /home/ai/projects/speech/dataset/asr/new-raw-0.wav  female
+1  /home/ai/projects/speech/dataset/asr/samples_1.wav  male
+2  /home/ai/projects/speech/dataset/asr/new-raw-2.wav  female
+3  /home/ai/projects/speech/dataset/asr/new-raw-3.wav  male
+4  /home/ai/projects/speech/dataset/asr/new-raw-4.wav  female
 ```
 
 # Models
