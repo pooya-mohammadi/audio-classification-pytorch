@@ -3,6 +3,17 @@
 In this project, several approaches for training/finetuning an audio gender recognition is provided. The code can simply
 be used for any other classification by changing the number of classes and the input dataset.
 
+# Dataset format
+Dataset should be a csv file that has two columns: `audio_path` and `lable`.
+```
+                                          audio_path   label
+0  /home/ai/projects/speech/dataset/asr/new-raw-d...  female
+1  /home/ai/projects/speech/dataset/asr/samples_0...  male
+2  /home/ai/projects/speech/dataset/asr/new-raw-d...  female
+3  /home/ai/projects/speech/dataset/asr/new-raw-d...  male
+4  /home/ai/projects/speech/dataset/asr/new-raw-d...  female
+```
+
 # Models
 
 1. LSTM_Model: uses mfccs to train a lstm model for audio classification. Trained using pytorchlightning.
