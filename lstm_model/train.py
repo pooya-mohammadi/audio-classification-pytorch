@@ -23,8 +23,10 @@ class LitModel(LightningModule):
                                hidden_size=Config.hidden_size, num_layers=Config.num_layers,
                                dropout=Config.dropout, bidirectional=Config.bidirectional, device=Config.device)
         self.criterion = CrossEntropyLoss()
-        self.f1_score = F1Score(num_classes=Config.num_classes, average="weighted").to(Config.device)
-        self.accuracy = Accuracy(num_classes=Config.num_classes).to(Config.device)
+        self.f1_score = F1Score(num_classes=Config.num_classes, average="weighted",
+                                task="binary" if Config.num_classes == 1 else "multiclass").to(Config.device)
+        self.accuracy = Accuracy(num_classes=Config.num_classes,
+                                 task="binary" if Config.num_classes == 1 else "multiclass").to(Config.device)
 
     def forward(self, x):
         mfcc, label = x

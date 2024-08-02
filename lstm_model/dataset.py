@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torchaudio
 import pandas as pd
+from deep_utils import DirUtils
 from sonopy import mfcc_spec
 from torch.utils.data import Dataset
 
@@ -93,12 +94,13 @@ class SpecAugment(nn.Module):
 
 class GenderRecognition(Dataset):
 
-    def __init__(self, data_json, n_classes=2, sample_rate=8000, valid=False):
+    def __init__(self, data_path, n_classes=2, sample_rate=8000, valid=False):
         self.sr = sample_rate
         self.n_classes = n_classes
-        self.data = pd.read_json(data_json, lines=True)
-        self.file_paths = list(self.data.keys())
-        self.labels = self.data.values[0]
+        # self.data = pd.read_json(data_json, lines=True)
+        # self.file_paths = list(self.data.keys())
+        DirUtils.crawl_directory_dataset(data_path)
+        # self.labels = self.data.values[0]
         if valid:
             self.audio_transform = get_featurizer(sample_rate)
         else:
