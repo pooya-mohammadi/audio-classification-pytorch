@@ -99,7 +99,7 @@ class GenderRecognition(Dataset):
         self.n_classes = n_classes
         # self.data = pd.read_json(data_json, lines=True)
         # self.file_paths = list(self.data.keys())
-        DirUtils.crawl_directory_dataset(data_path)
+        self.file_paths, self.labels, self.name2label = DirUtils.crawl_directory_dataset(data_path, map_labels=True)
         # self.labels = self.data.values[0]
         if valid:
             self.audio_transform = get_featurizer(sample_rate)

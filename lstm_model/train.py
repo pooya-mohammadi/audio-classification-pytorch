@@ -19,7 +19,7 @@ class LitModel(LightningModule):
     def __init__(self):
         super(LitModel, self).__init__()
 
-        self.model = LSTMModel(classifier_output=Config.classifier_output, feature_size=Config.feature_size,
+        self.model = LSTMModel(classifier_output=Config.num_classes, feature_size=Config.feature_size,
                                hidden_size=Config.hidden_size, num_layers=Config.num_layers,
                                dropout=Config.dropout, bidirectional=Config.bidirectional, device=Config.device)
         self.criterion = CrossEntropyLoss()
@@ -27,6 +27,7 @@ class LitModel(LightningModule):
                                 task="binary" if Config.num_classes == 1 else "multiclass").to(Config.device)
         self.accuracy = Accuracy(num_classes=Config.num_classes,
                                  task="binary" if Config.num_classes == 1 else "multiclass").to(Config.device)
+        self.train_outputs, self.test_outputs, self.validation_outputs = [], [], []
 
     def forward(self, x):
         mfcc, label = x
@@ -60,28 +61,34 @@ class LitModel(LightningModule):
         return {f"{data_type}_acc": acc, f"{data_type}_f1-score": f1_value, f"{data_type}_loss": loss}
 
     def training_step(self, batch, batch_idx):
+        self.train_outputs.append(self.get_step_metrics(batch))
         return self.get_step_metrics(batch)
 
     def validation_step(self, batch, batch_idx):
+        self.validation_outputs.append(self.get_step_metrics(batch))
         return self.get_step_metrics(batch)
 
     def test_step(self, batch, batch_idx):
+        self.test_outputs.append(self.get_step_metrics(batch))
         return self.get_step_metrics(batch)
 
-    def training_epoch_end(self, outputs) -> None:
-        metrics = self.calculate_metrics(outputs, data_type="train")
+    def on_train_epoch_end(self) -> None:
+        metrics = self.calculate_metrics(self.train_outputs, data_type="train")
         for n, m in metrics.items():
             self.log(n, m)
+        self.train_outputs.clear()
 
-    def validation_epoch_end(self, outputs) -> None:
-        metrics = self.calculate_metrics(outputs, data_type="val")
+    def on_validation_epoch_end(self) -> None:
+        metrics = self.calculate_metrics(self.validation_outputs, data_type="val")
         for n, m in metrics.items():
             self.log(n, m)
+        self.validation_outputs.clear()
 
-    def test_epoch_end(self, outputs) -> None:
-        metrics = self.calculate_metrics(outputs, data_type="test")
+    def on_test_epoch_end(self) -> None:
+        metrics = self.calculate_metrics(self.test_outputs, data_type="test")
         for n, m in metrics.items():
             self.log(n, m)
+        self.test_outputs.clear()
 
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(), lr=Config.lr)
@@ -91,9 +98,9 @@ class LitModel(LightningModule):
 
     @staticmethod
     def get_loaders():
-        train_dataset = GenderRecognition(data_json=Config.train_json_path, n_classes=Config.num_classes,
+        train_dataset = GenderRecognition(data_path=Config.train_dataset_dir, n_classes=Config.num_classes,
                                           sample_rate=Config.sample_rate, valid=False)
-        test_dataset = GenderRecognition(data_json=Config.test_json_path, n_classes=Config.num_classes,
+        test_dataset = GenderRecognition(data_path=Config.val_dataset_dir, n_classes=Config.num_classes,
                                          sample_rate=Config.sample_rate, valid=True)
 
         train_loader = DataLoader(dataset=train_dataset,
@@ -124,11 +131,12 @@ def main():
                                        monitor="val_loss",
                                        verbose=True)
     learning_rate_monitor = LearningRateMonitor(logging_interval="epoch")
-    trainer = pl.Trainer(gpus=1 if Config.device == "cuda" else 0,
-                         max_epochs=Config.epochs,
-                         min_epochs=Config.epochs // 10,
-                         callbacks=[model_checkpoint, learning_rate_monitor],
-                         default_root_dir=output_dir)
+    trainer = pl.Trainer(
+        # gpus=1 if Config.device == "cuda" else 0,
+        max_epochs=Config.epochs,
+        min_epochs=Config.epochs // 10,
+        callbacks=[model_checkpoint, learning_rate_monitor],
+        default_root_dir=output_dir)
     lit_model = LitModel()
     lit_model.model.apply(BlocksTorch.weights_init)
     train_loader, val_loader = lit_model.get_loaders()

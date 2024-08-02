@@ -17,7 +17,7 @@ class Config(BasicConfig):
     batch_size = 32
     sample_rate = 8_000
     num_classes = None
-    classifier_output = 2
+    # classifier_output = 2
     feature_size = 40
     hidden_size = 128
     num_layers = 1
@@ -29,7 +29,6 @@ class Config(BasicConfig):
     n_workers = 0
     pin_memory = True
     label2name = None
-
 
 Config.pin_memory = False if Config.device == "cpu" else True
 Config.num_classes = len(DirUtils.list_dir_full_path(BasicConfig.train_dataset_dir, only_directories=True))
