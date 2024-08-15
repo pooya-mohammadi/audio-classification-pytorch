@@ -1,5 +1,5 @@
 from os.path import join
-from deep_utils import warmup_cosine, dump_pickle, load_pickle, remove_create, mkdir_incremental
+from deep_utils import warmup_cosine, PickleUtils
 from datasets import load_dataset, Audio
 from transformers import AutoFeatureExtractor, AutoModelForAudioClassification, TrainingArguments, Trainer
 from settings import Config
@@ -14,7 +14,7 @@ def get_and_save_label2id(label2id_path, labels):
     for i, label in enumerate(labels):
         label2id[label] = str(i)
         id2label[str(i)] = label
-    dump_pickle(label2id_path, label2id)
+    PickleUtils.dump_pickle(label2id_path, label2id)
     print(f"Successfully saved label2id to {label2id_path}")
     return label2id, id2label
 

@@ -3,7 +3,7 @@ from argparse import Namespace
 from typing import Union
 from os.path import join
 from dataclasses import dataclass
-from deep_utils import update_obj_params, mkdir_incremental, variable_repr
+from deep_utils import PyUtils, mkdir_incremental
 
 
 @dataclass(init=True)
@@ -15,8 +15,8 @@ class BasicConfig:
 
     num_proc = 10  # number of processors used in dataset mapping...
 
-    test_path = "/home/ai/projects/speech/audio_classification/data/test_gender.csv"
-    train_path = "/home/ai/projects/speech/audio_classification/data/train_gender.csv"
+    train_path = "../sentiment_data/train.csv"
+    test_path = "../sentiment_data/val.csv"
 
     save_path = "results"
 
@@ -67,8 +67,8 @@ class TrainConfig:
 class Config(BasicConfig, ModelConfig, TrainConfig):
     def __init__(self, args: Union[dict, Namespace, None] = None):
         args = dict() if args is None else args
-        update_obj_params(self, args)
+        PyUtils.update_obj_params(self, args)
         self.basic_config_update()
 
     def __repr__(self):
-        return variable_repr(self)
+        return PyUtils.variable_repr(self)
