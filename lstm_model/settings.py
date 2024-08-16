@@ -26,7 +26,7 @@ class Config(BasicConfig):
     lr = 1e-4
     lr_reduce_factor = 0.5
     lr_patience = 10
-    n_workers = 0
+    n_workers = 8
     pin_memory = True
     label2name = None
 

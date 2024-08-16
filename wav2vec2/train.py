@@ -7,6 +7,9 @@ from sklearn.metrics import accuracy_score, f1_score, recall_score, precision_sc
 import numpy as np
 import torch
 from transformers import EarlyStoppingCallback
+import os
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 
 def get_and_save_label2id(label2id_path, labels):
@@ -33,7 +36,10 @@ def compute_metrics(p):
 def preprocess_function(examples):
     audio_arrays = [x["array"] for x in examples["audio_path"]]
     inputs = feature_extractor(
-        audio_arrays, sampling_rate=feature_extractor.sampling_rate, max_length=16000, truncation=True
+        audio_arrays,
+        sampling_rate=feature_extractor.sampling_rate,
+        max_length=16000,
+        truncation=True
     )
     label = [int(label2id[x]) for x in examples["label"]]
     inputs["label"] = label
@@ -60,7 +66,7 @@ if __name__ == '__main__':
 
     training_args = TrainingArguments(
         output_dir=config.model_path,
-        evaluation_strategy=config.evaluation_strategy,
+        eval_strategy=config.evaluation_strategy,
         save_strategy=config.evaluation_strategy,
         num_train_epochs=config.num_train_epochs,
         report_to=config.report_to,
@@ -70,6 +76,7 @@ if __name__ == '__main__':
         per_device_train_batch_size=config.per_device_train_batch_size,
         per_device_eval_batch_size=config.per_device_eval_batch_size,
         logging_steps=config.logging_steps,
+        # gradient_checkpointing=True
     )
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=config.learning_rate)
