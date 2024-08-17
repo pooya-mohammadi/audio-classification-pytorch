@@ -5,8 +5,10 @@
 *.pt
 *.ckpt
 *.bin
+*.ipynb
 wav2vec2/results
 lstm_model/output
 data
 transformer_model/output
 sentiment_data
+.vscode/launch.json

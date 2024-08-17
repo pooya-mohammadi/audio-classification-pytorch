@@ -7,8 +7,8 @@ from pathlib import Path
 import librosa
 from datasets import load_dataset, Audio
 
-inference_dir = Path("./results/exp_12/best")
-sample_path = "../sentiment_data/val/S/F02S05.wav"
+inference_dir = Path("./results/exp_0/best")
+sample_path = "/home/ariyadis-pc03/github/audio-classification-pytorch/sentiment_data/train/S/F01S05.wav"
 
 config = Config()
 label2id = PickleUtils.load_pickle(inference_dir / "label2id.pkl")
@@ -29,7 +29,7 @@ def get_audio(path: str):
 
 # early_stopping = EarlyStoppingCallback(early_stopping_patience=config.early_stopping_patience)
 
-device = "cuda:1"
+device = "cuda"
 model = AutoModelForAudioClassification.from_pretrained(
     inference_dir,
     num_labels=len(label2id),
