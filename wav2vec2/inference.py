@@ -7,8 +7,8 @@ from pathlib import Path
 import librosa
 from datasets import load_dataset, Audio
 
-inference_dir = Path("./results/exp_0/best")
-sample_path = "/home/ariyadis-pc03/github/audio-classification-pytorch/sentiment_data/train/S/F01S05.wav"
+inference_dir = Path("./results/best")
+sample_path = "../sentiment_data/train/S/F01S05.wav"
 
 config = Config()
 label2id = PickleUtils.load_pickle(inference_dir / "label2id.pkl")

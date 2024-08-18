@@ -1,21 +1,22 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
-import torch
-from transformers import AutoModelForAudioClassification, AutoFeatureExtractor
-from settings import Config
-from pathlib import Path
-import librosa
-import numpy as np
-from deep_utils import PickleUtils
-import tempfile
-import shutil
 import os
+import shutil
+import tempfile
+from pathlib import Path
+
+import librosa
+import torch
+from deep_utils import PickleUtils
+from fastapi import FastAPI, UploadFile, File, HTTPException
+from transformers import AutoModelForAudioClassification, AutoFeatureExtractor
+
+from settings import Config
 
 # Initialize FastAPI app
 app = FastAPI()
 
 # Load configurations and model
 config = Config()
-inference_dir = Path("./results/exp_0/best")
+inference_dir = Path("./results/best")
 label2id = PickleUtils.load_pickle(inference_dir / "label2id.pkl")
 id2label = {int(v): k for k, v in label2id.items()}
 feature_extractor = AutoFeatureExtractor.from_pretrained(config.feature_extractor)
@@ -26,8 +27,8 @@ model = AutoModelForAudioClassification.from_pretrained(
     num_labels=len(label2id),
     label2id=label2id,
     id2label=id2label
-)
-model = model.to(device)
+).to(device).eval()
+
 
 def get_audio(file_path: str):
     audio, _ = librosa.load(file_path, sr=feature_extractor.sampling_rate)
@@ -40,6 +41,7 @@ def get_audio(file_path: str):
     )
     return inputs['input_values'][0]
 
+
 @app.post("/predict-audio/")
 async def predict_audio(file: UploadFile = File(...)):
     try:
@@ -47,16 +49,13 @@ async def predict_audio(file: UploadFile = File(...)):
         # with tempfile.TemporaryDirectory() as tmpdir:
         # Define the path for the temporary file
         # temp_file_path = Path(tmpdir) / file.filename
-        
+
         # Save the uploaded file to the temporary directory
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_file:
+        with tempfile.NamedTemporaryFile(delete=True, suffix=".wav") as temp_file:
             shutil.copyfileobj(file.file, temp_file)
+            # Process the audio file
+            audio_array = get_audio(temp_file.name)
 
-        # Process the audio file
-        audio_array = get_audio(temp_file.name)
-
-        os.remove(temp_file.name)
-        
         # Prepare the audio tensor for model inference
         with torch.no_grad():
             audio_tensor = torch.tensor(audio_array).to(device=device)
@@ -72,6 +71,8 @@ async def predict_audio(file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 if __name__ == '__main__':
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)
