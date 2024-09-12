@@ -44,7 +44,7 @@ class ModelConfig:
 
 @dataclass(init=True)
 class TrainConfig:
-    num_train_epochs = 15
+    num_train_epochs = 50
     warmup_steps = 100
     dataloader_num_workers = 8
     logging_steps = 1

@@ -1,6 +1,42 @@
-from os.path import join
-from time import time
+import time
 
+from peft import LoraConfig, get_peft_model
+import warnings
+
+warnings.filterwarnings("ignore")
+# import torch
+# from typing import Optional
+# import os
+# # os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+#
+# class PeftModelForAudioClassification(PeftModelForSequenceClassification):
+#     def __init__(self, model, peft_config: PeftConfig, adapter_name="default"):
+#         super().__init__(model, peft_config, adapter_name)
+#         if self.modules_to_save is None:
+#             self.modules_to_save = {"classifier", "score"}
+#         else:
+#             self.modules_to_save.update({"classifier", "score"})
+#         for name, _ in self.base_model.named_children():
+#             if any(module_name in name for module_name in self.modules_to_save):
+#                 self.cls_layer_name = name
+#                 break
+#
+#     def forward(self,
+#                 input_values: Optional[torch.Tensor],
+#                 attention_mask: Optional[torch.Tensor] = None,
+#                 output_attentions: Optional[bool] = None,
+#                 output_hidden_states: Optional[bool] = None,
+#                 return_dict: Optional[bool] = None,
+#                 labels: Optional[torch.Tensor] = None):
+#
+#         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+#         peft_config = self.active_peft_config
+#         if not peft_config.is_prompt_learning:
+#             return self.base_model(input_values, attention_mask, output_attentions, output_hidden_states, return_dict,
+#                                    labels)
+
+
+from os.path import join
 from deep_utils import warmup_cosine, PickleUtils
 from datasets import load_dataset, Audio
 from transformers import AutoFeatureExtractor, AutoModelForAudioClassification, TrainingArguments, Trainer
@@ -10,8 +46,10 @@ import numpy as np
 import torch
 from transformers import EarlyStoppingCallback
 import os
-os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-# os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+
+
+# os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 
 def get_and_save_label2id(label2id_path, labels):
@@ -59,16 +97,42 @@ if __name__ == '__main__':
 
     # early_stopping = EarlyStoppingCallback(early_stopping_patience=config.early_stopping_patience)
 
-    total_steps = int((np.ceil(encoded_dataset["train"].num_rows / config.per_device_train_batch_size) * config.num_train_epochs))
+    total_steps = int(
+        (np.ceil(encoded_dataset["train"].num_rows / config.per_device_train_batch_size) * config.num_train_epochs))
 
     num_labels = len(id2label)
     model = AutoModelForAudioClassification.from_pretrained(
-        "facebook/wav2vec2-base", num_labels=num_labels, label2id=label2id, id2label=id2label
+        "facebook/wav2vec2-base", num_labels=num_labels, label2id=label2id, id2label=id2label,
     )
+    # model.is_gradient_checkpointing = False
+    # model.frease_feature_extractor()
+    model.gradient_checkpointing_disable()
+    peft_config = LoraConfig(
+        # task_type="SEQ_CLS",
+        # inference_mode=False,
+        r=64,
+        lora_alpha=64,
+        # lora_dropout=0.1,
+        target_modules=["projector", "k_proj", "v_proj", "q_proj", "output_dense", "intermediate_dense", "out_proj",
+                        # "conv",
+                        # *[f"wav2vec2.encoder.layers.{i}.feed_forward.intermediate_dense" for i in range(12)],
+
+                        ],
+        modules_to_save=['classifier']
+    )
+    # config = peft.LoraConfig(
+    #     r=8,
+    #     target_modules=["seq.0", "seq.2"],  # Trained with LoRA. Only linear, Conv1D, and Conv2D are supported!
+    #     modules_to_save=["seq.4"],  # trained but not with LoRA, for it's the last output
+    # )
+
+    model = get_peft_model(model, peft_config)
+
+    model.to("cuda:0")
+    model.print_trainable_parameters()
 
     training_args = TrainingArguments(
         output_dir=config.model_path,
-        # eval_strategy=config.evaluation_strategy,
         evaluation_strategy=config.evaluation_strategy,
         save_strategy=config.evaluation_strategy,
         num_train_epochs=config.num_train_epochs,
@@ -79,7 +143,8 @@ if __name__ == '__main__':
         per_device_train_batch_size=config.per_device_train_batch_size,
         per_device_eval_batch_size=config.per_device_eval_batch_size,
         logging_steps=config.logging_steps,
-        # gradient_checkpointing=True
+        label_names=['labels']
+        # gradient_checkpointing=False
     )
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=config.learning_rate)
@@ -100,8 +165,8 @@ if __name__ == '__main__':
         compute_metrics=compute_metrics,
         optimizers=(optimizer, scheduler)
     )
-
-    tic = time()
+    tic = time.time()
     trainer.train()
-    print(f"[INFO] Time: {time() - tic}")
+    print(f"[INFO] Time: {time.time() - tic}")
     trainer.save_model(join(config.model_path, config.file_name))
+    model.print_trainable_parameters()
