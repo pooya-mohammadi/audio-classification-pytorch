@@ -13,7 +13,7 @@ class BasicConfig:
 
 class Config(BasicConfig):
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    epochs = 50
+    epochs = 25
     batch_size = 32
     sample_rate = 8_000
     num_classes = None
@@ -25,7 +25,7 @@ class Config(BasicConfig):
     bidirectional = False
     lr = 1e-4
     lr_reduce_factor = 0.5
-    lr_patience = 10
+    lr_patience = 3
     n_workers = 8
     pin_memory = True
     label2name = None

@@ -1,5 +1,6 @@
 from os.path import join
 import torch
+import time
 import torch.utils.data as data
 from deep_utils import mkdir_incremental
 from pytorch_lightning.callbacks import ModelCheckpoint, LearningRateMonitor
@@ -55,8 +56,8 @@ class LitModel(LightningModule):
             preds.append(row['preds'])
             labels.append(row["labels"])
         preds, labels = torch.concat(preds), torch.concat(labels).to(torch.long)
-        f1_value = self.f1_score(preds, labels)
-        acc = self.accuracy(preds, labels)
+        f1_value = self.f1_score(torch.argmax(preds, dim=-1), torch.argmax(labels, dim=-1))
+        acc = self.accuracy(torch.argmax(preds, dim=-1), torch.argmax(labels, dim=-1))
         loss = r_loss / size
         return {f"{data_type}_acc": acc, f"{data_type}_f1-score": f1_value, f"{data_type}_loss": loss}
 
@@ -125,6 +126,7 @@ class LitModel(LightningModule):
 
 
 def main():
+    tic = time.time()
     output_dir = mkdir_incremental(Config.output_dir)
     model_checkpoint = ModelCheckpoint(dirpath=output_dir,
                                        filename=Config.file_name,
@@ -132,7 +134,7 @@ def main():
                                        verbose=True)
     learning_rate_monitor = LearningRateMonitor(logging_interval="epoch")
     trainer = pl.Trainer(
-        # gpus=1 if Config.device == "cuda" else 0,
+        gpus=1 if Config.device == "cuda" else 0,
         max_epochs=Config.epochs,
         min_epochs=Config.epochs // 10,
         callbacks=[model_checkpoint, learning_rate_monitor],
@@ -150,7 +152,7 @@ def main():
     best_weight = torch.load(weight_path)
     best_weight['config'] = Config
     torch.save(best_weight, weight_path)
-
+    print(f"[INFO] Elapsed time: {time.time() - tic}")
 
 if __name__ == '__main__':
     main()

@@ -1,3 +1,4 @@
+import time
 from os.path import join
 import torch
 import torch.utils.data as data
@@ -19,15 +20,19 @@ class LitModel(LightningModule):
     def __init__(self):
         super(LitModel, self).__init__()
 
-        self.model = Transformer(input_size=Config.feature_size)
+        self.model = Transformer(input_size=Config.feature_size, n_classes=Config.num_classes)
         self.criterion = CrossEntropyLoss()
-        self.f1_score = F1Score(num_classes=Config.num_classes, average="weighted").to(Config.device)
-        self.accuracy = Accuracy(num_classes=Config.num_classes).to(Config.device)
+        self.task = "multiclass"
+        self.f1_score = F1Score(num_classes=Config.num_classes, average="weighted", task=self.task).to(Config.device)
+        self.accuracy = Accuracy(num_classes=Config.num_classes, task=self.task).to(Config.device)
 
     def forward(self, x):
         mfcc, label = x
         logit = self.model(mfcc)
-        pred = torch.sigmoid(logit)
+        if self.task == "multiclass":
+            pred = torch.softmax(logit, dim=-1)
+        else:
+            pred = torch.sigmoid(logit)
         return pred
 
     def get_step_metrics(self, batch):
@@ -35,7 +40,10 @@ class LitModel(LightningModule):
         batch_size = mfcc.size(1)
         logits = self.model(mfcc)
         loss = self.criterion(logits, labels) * batch_size
-        preds = torch.sigmoid(logits)
+        if self.task == "multiclass":
+            preds = torch.softmax(logits, dim=-1)
+        else:
+            preds = torch.sigmoid(logits)
         corrects = torch.sum(preds == labels)
         return dict(loss=loss, corrects=corrects,
                     labels=labels, preds=preds,
@@ -50,8 +58,8 @@ class LitModel(LightningModule):
             preds.append(row['preds'])
             labels.append(row["labels"])
         preds, labels = torch.concat(preds), torch.concat(labels).to(torch.long)
-        f1_value = self.f1_score(preds, labels)
-        acc = self.accuracy(preds, labels)
+        f1_value = self.f1_score(torch.argmax(preds, dim=-1), torch.argmax(labels, dim=-1))
+        acc = self.accuracy(torch.argmax(preds, dim=-1), torch.argmax(labels, dim=-1))
         loss = r_loss / size
         return {f"{data_type}_acc": acc, f"{data_type}_f1-score": f1_value, f"{data_type}_loss": loss}
 
@@ -87,9 +95,9 @@ class LitModel(LightningModule):
 
     @staticmethod
     def get_loaders():
-        train_dataset = GenderRecognition(data_json=Config.train_json_path, n_classes=Config.num_classes,
+        train_dataset = GenderRecognition(data_path=Config.train_dataset_dir, n_classes=Config.num_classes,
                                           sample_rate=Config.sample_rate, valid=False)
-        test_dataset = GenderRecognition(data_json=Config.test_json_path, n_classes=Config.num_classes,
+        test_dataset = GenderRecognition(data_path=Config.val_dataset_dir, n_classes=Config.num_classes,
                                          sample_rate=Config.sample_rate, valid=True)
 
         train_loader = DataLoader(dataset=train_dataset,
@@ -114,6 +122,7 @@ class LitModel(LightningModule):
 
 
 def main():
+    tic = time.time()
     output_dir = mkdir_incremental(Config.output_dir)
     model_checkpoint = ModelCheckpoint(dirpath=output_dir,
                                        filename=Config.file_name,
@@ -138,6 +147,7 @@ def main():
     best_weight = torch.load(weight_path)
     best_weight['config'] = Config
     torch.save(best_weight, weight_path)
+    print(f"[INFO] Elapsed time: {time.time() - tic}")
 
 
 if __name__ == '__main__':
