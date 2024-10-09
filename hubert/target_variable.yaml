@@ -1,0 +1,18 @@
+target_variable: gender
+
+target_variables:
+  gender:
+    num_of_classes: 3
+    label2id:
+      male: 0
+      female: 1
+      unknown: 2
+  sentiment:
+    num_of_classes: 6
+    label2id:
+      neutral: 0
+      sadness: 1
+      anger: 2
+      happiness: 3
+      surprise: 4
+      fear: 5

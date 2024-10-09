@@ -6,9 +6,12 @@
 *.ckpt
 *.bin
 *.ipynb
+gender_data/
 wav2vec2/results
 lstm_model/output
 data
 transformer_model/output
 sentiment_data
 .vscode/launch.json
+wav2vec2/.env
+wav2vec2/users_db.yaml
