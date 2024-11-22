@@ -1,14 +1,14 @@
 import numpy as np
 import torch
-from deep_utils import PickleUtils
+from deep_utils import PickleUtils, DirUtils, JsonUtils
 from transformers import AutoModelForAudioClassification, AutoFeatureExtractor
 from settings import Config
 from pathlib import Path
 import librosa
-from datasets import load_dataset, Audio
+from tqdm import tqdm
 
 inference_dir = Path("./results/best_1")
-sample_path = "../sentiment_data/train/S/F01S05.wav"
+sample_path = "/home/ai/projects/audio-data-movies"
 
 config = Config()
 label2id = PickleUtils.load_pickle(inference_dir / "label2id.pkl")
@@ -41,11 +41,19 @@ model = AutoModelForAudioClassification.from_pretrained(
 model = model.to(device)
 
 if __name__ == '__main__':
-    audio_array = get_audio(sample_path)
+    audio_files = DirUtils.list_dir_full_path(sample_path, interest_extensions=".wav")
     with torch.no_grad():
-        audio_array = torch.tensor(audio_array).to(device=device)
-        audio_array = audio_array[None, ...]
-        output = model(audio_array)
-        logits = output["logits"][0]
-        cls_index = torch.argmax(logits).item()
-        print(f"class: {cls_index}, cls_name: {id2label[cls_index]}")
+        for sample_audio_path in tqdm(audio_files):
+            audio_array = get_audio(sample_audio_path)
+            audio_array = torch.tensor(audio_array).to(device=device)
+            audio_array = audio_array[None, ...]
+            output = model(audio_array)
+            logits = output["logits"][0]
+            cls_index = torch.argmax(logits).item()
+            cls_name = id2label[cls_index]
+            json_path = DirUtils.split_extension(sample_audio_path, extension=".json")
+            data = JsonUtils.load(json_path)
+            data['label_name'] = cls_name
+            data['label_value'] = cls_index
+            JsonUtils.dump(json_path, data)
+            # print(f"class: {cls_index}, cls_name: {cls_name}")
