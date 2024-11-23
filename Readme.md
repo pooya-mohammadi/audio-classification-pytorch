@@ -1,9 +1,9 @@
-# Audio Classification
+# Audio Sentiment/Gender Classification
 
-In this project, several approaches for training/finetuning an audio gender recognition is provided. The code can simply
+In this project, several approaches for training/finetuning an audio sentiment/gender recognition is provided. The code can simply
 be used for any other classification by changing the number of classes and the input dataset.
 
-# Dataset format
+# Gender Dataset format
 Dataset should be a csv file that has two columns: `audio_path` and `lable`.
 ```
                                           audio_path   label
@@ -13,6 +13,11 @@ Dataset should be a csv file that has two columns: `audio_path` and `lable`.
 3  /home/ai/projects/speech/dataset/asr/new-raw-3.wav  male
 4  /home/ai/projects/speech/dataset/asr/new-raw-4.wav  female
 ```
+
+# Sentiment Dataset format
+
+Download the [Shemo](https://www.kaggle.com/datasets/mansourehk/shemo-persian-speech-emotion-detection-database).
+dataset from kaggle. Put the data in `data` directory. Then run `data/data_preparation.py`.
 
 # Models
 
@@ -25,6 +30,15 @@ Dataset should be a csv file that has two columns: `audio_path` and `lable`.
        called [Text-Classification-Models-Pytorch](https://github.com/AnubhavGupta3377/Text-Classification-Models-Pytorch)
     2. It's modified to train audio samples.
 3. wav2vec2: Fine-tuning wav2vec2-base as an audio classification model using huggingface trainer.
+# Train:
+```commandline
+Run the `train.py` module in each folder!  
+```
+# Evaluation:
+```commandline
+Run the `evaluate.py` module in each folder!
+```
+
 
 # Result on Gender Recognition
 

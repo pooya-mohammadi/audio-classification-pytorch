@@ -7,7 +7,6 @@ from pathlib import Path
 import librosa
 from tqdm import tqdm
 
-inference_dir = Path("./results/best_1")
 sample_path = "/home/ai/projects/audio-data-movies"
 
 config = Config()
