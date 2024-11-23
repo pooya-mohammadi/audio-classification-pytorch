@@ -8,9 +8,8 @@ from settings import Config
 from sklearn.metrics import accuracy_score, f1_score, recall_score, precision_score
 import numpy as np
 import torch
-from transformers import EarlyStoppingCallback
-import os
-os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+# import os
+# os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 # os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 

@@ -8,8 +8,8 @@ import librosa
 from tqdm import tqdm
 from sklearn.metrics import f1_score, recall_score, accuracy_score, precision_score
 
-inference_dir = Path("./results/exp_81/best")
-sample_path = "test_data"
+inference_dir = Path("./results/exp_88/best")
+sample_path = "../test_data"
 
 config = Config()
 label2id = PickleUtils.load_pickle(inference_dir / "label2id.pkl")
@@ -43,6 +43,7 @@ model = model.to(device)
 
 if __name__ == '__main__':
     files, true_labels, mapping = DirUtils.crawl_directory_dataset(sample_path, ext_filter=".wav", map_labels=True)
+    true_labels = [int(item) for item in true_labels]
     predictions = []
     with torch.no_grad():
         for sample_audio_path in tqdm(files):

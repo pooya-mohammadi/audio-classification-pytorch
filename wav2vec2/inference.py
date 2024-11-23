@@ -7,8 +7,9 @@ from pathlib import Path
 import librosa
 from datasets import load_dataset, Audio
 
-inference_dir = Path("./results/best_1")
+inference_dir = Path("./results/exp_88/best")
 sample_path = "../sentiment_data/train/S/F01S05.wav"
+sample_path = "../test_data/4/a8m2c_5248.wav"
 
 config = Config()
 label2id = PickleUtils.load_pickle(inference_dir / "label2id.pkl")
