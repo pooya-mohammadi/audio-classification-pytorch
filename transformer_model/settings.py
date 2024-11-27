@@ -7,6 +7,7 @@ from os.path import split
 class BasicConfig:
     train_dataset_dir = "../sentiment_data/train"
     val_dataset_dir = "../sentiment_data/val"
+    test_dataset_dir = "../sentiment_data/test"
     output_dir = "output"
     file_name = "best"
     # label2name = {0: "female", 1: "male"}

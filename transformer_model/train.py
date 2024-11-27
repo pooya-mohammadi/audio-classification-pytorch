@@ -97,7 +97,9 @@ class LitModel(LightningModule):
     def get_loaders():
         train_dataset = GenderRecognition(data_path=Config.train_dataset_dir, n_classes=Config.num_classes,
                                           sample_rate=Config.sample_rate, valid=False)
-        test_dataset = GenderRecognition(data_path=Config.val_dataset_dir, n_classes=Config.num_classes,
+        val_dataset = GenderRecognition(data_path=Config.val_dataset_dir, n_classes=Config.num_classes,
+                                         sample_rate=Config.sample_rate, valid=True)
+        test_dataset = GenderRecognition(data_path=Config.test_dataset_dir, n_classes=Config.num_classes,
                                          sample_rate=Config.sample_rate, valid=True)
 
         train_loader = DataLoader(dataset=train_dataset,
@@ -118,7 +120,16 @@ class LitModel(LightningModule):
                                       pin_memory=Config.pin_memory
                                       )
 
-        return train_loader, test_loader
+        val_loader = data.DataLoader(dataset=val_dataset,
+                                      batch_size=Config.batch_size,
+                                      shuffle=False,
+                                      collate_fn=collate_fn,
+                                      num_workers=Config.n_workers,
+                                      # drop_last=True,
+                                      pin_memory=Config.pin_memory
+                                      )
+
+        return train_loader, val_loader, test_loader
 
 
 def main():
@@ -136,12 +147,12 @@ def main():
                          default_root_dir=output_dir)
     lit_model = LitModel()
     lit_model.model.apply(BlocksTorch.weights_init)
-    train_loader, val_loader = lit_model.get_loaders()
+    train_loader, val_loader, test_loader = lit_model.get_loaders()
     print("[INFO] Training the model")
     trainer.fit(model=lit_model, train_dataloaders=train_loader, val_dataloaders=val_loader)
 
     trainer.test(lit_model, ckpt_path="best", dataloaders=val_loader)
-    trainer.test(lit_model, ckpt_path="best", dataloaders=train_loader)
+    trainer.test(lit_model, ckpt_path="best", dataloaders=test_loader)
 
     weight_path = join(output_dir, f"{Config.file_name}.ckpt")
     best_weight = torch.load(weight_path)

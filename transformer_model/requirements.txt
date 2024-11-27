@@ -1,3 +1,4 @@
 sonopy==0.1.2
 torchmetrics>=0.8.1
 torchaudio
+pytorch_lightning==1.9.5

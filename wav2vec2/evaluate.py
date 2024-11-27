@@ -8,7 +8,12 @@ import librosa
 from tqdm import tqdm
 from sklearn.metrics import f1_score, recall_score, accuracy_score, precision_score
 
+<<<<<<< HEAD
 sample_path = "../test_data"
+=======
+inference_dir = Path("./results/exp_91/best")
+sample_path = "../sentiment_data/val"
+>>>>>>> 024406b (Update codes)
 
 config = Config()
 label2id = PickleUtils.load_pickle(inference_dir / "label2id.pkl")
@@ -38,10 +43,15 @@ model = AutoModelForAudioClassification.from_pretrained(
 )
 
 # model.load_state_dict(torch.load(inference_dir / "model.safetensors"))
-model = model.to(device)
+model = model.to(device).eval()
 
 if __name__ == '__main__':
+<<<<<<< HEAD
     files, true_labels, mapping = DirUtils.crawl_directory_dataset(sample_path, ext_filter=".wav", map_labels=True)
+=======
+    files, true_labels = DirUtils.crawl_directory_dataset(sample_path, ext_filter=".wav")
+    true_labels = [int(label2id[item]) for item in true_labels]
+>>>>>>> 024406b (Update codes)
     predictions = []
     with torch.no_grad():
         for sample_audio_path in tqdm(files):
@@ -53,7 +63,7 @@ if __name__ == '__main__':
             cls_index = torch.argmax(logits).item()
             predictions.append(cls_index)
             # print(f"class: {cls_index}, cls_name: {cls_name}")
-    print("f1_score: ", f1_score(true_labels, predictions, labels=list(mapping.values()), average="macro"))
-    print("precision_score: ", precision_score(true_labels, predictions, labels=list(mapping.values()), average="macro"))
+    print("f1_score: ", f1_score(true_labels, predictions, labels=list(true_labels), average="macro"))
+    print("precision_score: ", precision_score(true_labels, predictions, labels=list(true_labels), average="macro"))
     print("accuracy_score: ", accuracy_score(true_labels, predictions))
-    print("recall_score: ", recall_score(true_labels, predictions, labels=list(mapping.values()), average="macro"))
+    print("recall_score: ", recall_score(true_labels, predictions, labels=list(true_labels), average="macro"))

@@ -50,7 +50,8 @@ def preprocess_function(examples):
 if __name__ == '__main__':
     config = Config()
     feature_extractor = AutoFeatureExtractor.from_pretrained(config.feature_extractor)
-    dataset = load_dataset('csv', data_files={'train': config.train_path, 'test': config.test_path})
+    dataset = load_dataset('csv', data_files={'train': config.train_path,
+                                              'val': config.val_path, "test": config.test_path})
     dataset = dataset.cast_column("audio_path", Audio(sampling_rate=config.target_sampling_rate))
     labels = set(dataset["train"]['label'])
     label2id, id2label = get_and_save_label2id(config.label2id_path, labels)
@@ -94,7 +95,7 @@ if __name__ == '__main__':
         model=model,
         args=training_args,
         train_dataset=encoded_dataset["train"],
-        eval_dataset=encoded_dataset["test"],
+        eval_dataset=encoded_dataset["val"],
         tokenizer=feature_extractor,
         compute_metrics=compute_metrics,
         optimizers=(optimizer, scheduler)
@@ -104,3 +105,5 @@ if __name__ == '__main__':
     trainer.train()
     print(f"[INFO] Time: {time() - tic}")
     trainer.save_model(join(config.model_path, config.file_name))
+    output = trainer.evaluate(eval_dataset=encoded_dataset['test'])
+    print("[INFO] Test evaluation", output)

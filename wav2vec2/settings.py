@@ -16,7 +16,8 @@ class BasicConfig:
     num_proc = 10  # number of processors used in dataset mapping...
 
     train_path = "../sentiment_data/train.csv"
-    test_path = "../sentiment_data/val.csv"
+    val_path = "../sentiment_data/val.csv"
+    test_path = "../sentiment_data/test.csv"
 
     save_path = "results"
 
