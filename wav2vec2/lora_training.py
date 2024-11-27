@@ -90,7 +90,7 @@ if __name__ == '__main__':
     config = Config()
     feature_extractor = AutoFeatureExtractor.from_pretrained(config.feature_extractor)
     dataset = load_dataset('csv', data_files={'train': config.train_path, 'val': config.val_path,
-                                              'test': config.train_path, })
+                                              'test': config.test_path, })
     dataset = dataset.cast_column("audio_path", Audio(sampling_rate=config.target_sampling_rate))
     labels = set(dataset["train"]['label'])
     label2id, id2label = get_and_save_label2id(config.label2id_path, labels)
