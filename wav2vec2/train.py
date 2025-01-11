@@ -49,7 +49,7 @@ def preprocess_function(examples):
 
 if __name__ == '__main__':
     config = Config()
-    base_model_path_ = "results/exp_1/best"
+    # base_model_path_ = "results/exp_1/best"
     feature_extractor = AutoFeatureExtractor.from_pretrained(config.feature_extractor)
     dataset = load_dataset('csv', data_files={'train': config.train_path,
                                               'val': config.val_path, "test": config.test_path})
