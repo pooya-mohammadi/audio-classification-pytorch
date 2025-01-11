@@ -16,7 +16,7 @@ train_dir = "../sentiment_data/train"
 split_type = "class"  # id class
 
 DirUtils.remove_create(output_dir)
-test_size = 0.25
+test_size = 0.1
 
 data_sample_id = dict()
 
