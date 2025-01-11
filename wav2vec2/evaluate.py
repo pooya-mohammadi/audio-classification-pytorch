@@ -1,69 +1,180 @@
+# import numpy as np
+# import torch
+# from deep_utils import PickleUtils, DirUtils, JsonUtils
+# from transformers import AutoModelForAudioClassification, AutoFeatureExtractor
+# from settings import Config
+# from pathlib import Path
+# import librosa
+# from tqdm import tqdm
+# from sklearn.metrics import f1_score, recall_score, accuracy_score, precision_score
+#
+# sample_path = "../test_data"
+# =======
+# inference_dir = Path("./results/exp_91/best")
+# sample_path = "../sentiment_data/val"
+# >>>>>>> 024406b (Update codes)
+#
+# config = Config()
+# label2id = PickleUtils.load_pickle(inference_dir / "label2id.pkl")
+# id2label = {int(v): k for k, v in label2id.items()}
+# feature_extractor = AutoFeatureExtractor.from_pretrained(config.feature_extractor)
+#
+#
+# def get_audio(path: str):
+#     audio, _ = librosa.load(path)
+#     inputs = feature_extractor(
+#         audio,
+#         sampling_rate=feature_extractor.sampling_rate,
+#         max_length=16000,
+#         truncation=True
+#     )
+#     return inputs['input_values'][0]
+#
+#
+# # early_stopping = EarlyStoppingCallback(early_stopping_patience=config.early_stopping_patience)
+#
+# device = "cuda"
+# model = AutoModelForAudioClassification.from_pretrained(
+#     inference_dir,
+#     num_labels=len(label2id),
+#     label2id=label2id,
+#     id2label=id2label
+# )
+#
+# # model.load_state_dict(torch.load(inference_dir / "model.safetensors"))
+# model = model.to(device).eval()
+#
+# if __name__ == '__main__':
+#     files, true_labels, mapping = DirUtils.crawl_directory_dataset(sample_path, ext_filter=".wav", map_labels=True)
+#     files, true_labels = DirUtils.crawl_directory_dataset(sample_path, ext_filter=".wav")
+#     true_labels = [int(label2id[item]) for item in true_labels]
+#     predictions = []
+#     with torch.no_grad():
+#         for sample_audio_path in tqdm(files):
+#             audio_array = get_audio(sample_audio_path)
+#             audio_array = torch.tensor(audio_array).to(device=device)
+#             audio_array = audio_array[None, ...]
+#             output = model(audio_array)
+#             logits = output["logits"][0]
+#             cls_index = torch.argmax(logits).item()
+#             predictions.append(cls_index)
+#             # print(f"class: {cls_index}, cls_name: {cls_name}")
+#     print("f1_score: ", f1_score(true_labels, predictions, labels=list(true_labels), average="macro"))
+#     print("precision_score: ", precision_score(true_labels, predictions, labels=list(true_labels), average="macro"))
+#     print("accuracy_score: ", accuracy_score(true_labels, predictions))
+#     print("recall_score: ", recall_score(true_labels, predictions, labels=list(true_labels), average="macro"))
+
+
+from os.path import join
+from time import time
+
+from deep_utils import warmup_cosine, PickleUtils
+from datasets import load_dataset, Audio
+from transformers import AutoFeatureExtractor, AutoModelForAudioClassification, TrainingArguments, Trainer
+from settings import Config
+from sklearn.metrics import accuracy_score, f1_score, recall_score, precision_score
 import numpy as np
 import torch
-from deep_utils import PickleUtils, DirUtils, JsonUtils
-from transformers import AutoModelForAudioClassification, AutoFeatureExtractor
-from settings import Config
-from pathlib import Path
-import librosa
-from tqdm import tqdm
-from sklearn.metrics import f1_score, recall_score, accuracy_score, precision_score
-
-<<<<<<< HEAD
-sample_path = "../test_data"
-=======
-inference_dir = Path("./results/exp_91/best")
-sample_path = "../sentiment_data/val"
->>>>>>> 024406b (Update codes)
-
-config = Config()
-label2id = PickleUtils.load_pickle(inference_dir / "label2id.pkl")
-id2label = {int(v): k for k, v in label2id.items()}
-feature_extractor = AutoFeatureExtractor.from_pretrained(config.feature_extractor)
+# import os
+# os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 
-def get_audio(path: str):
-    audio, _ = librosa.load(path)
+def get_and_save_label2id(label2id_path, labels):
+    label2id, id2label = dict(), dict()
+    for i, label in enumerate(labels):
+        label2id[label] = str(i)
+        id2label[str(i)] = label
+    PickleUtils.dump_pickle(label2id_path, label2id)
+    print(f"Successfully saved label2id to {label2id_path}")
+    return label2id, id2label
+
+
+def compute_metrics(p):
+    predictions, labels = p
+    print(len(predictions), len(labels))
+    print(predictions[0])
+    print(labels[0])
+    predictions = np.argmax(predictions, axis=1)
+    acc = accuracy_score(labels, predictions)
+    f1 = f1_score(labels, predictions, average="weighted")
+    recall = recall_score(labels, predictions, average="weighted")
+    precision = precision_score(labels, predictions, average="weighted")
+
+    return {"accuracy": acc, "f1-score": f1, "recall-score": recall, "precision-score": precision}
+
+
+def preprocess_function(examples):
+    audio_arrays = [x["array"] for x in examples["audio_path"]]
     inputs = feature_extractor(
-        audio,
+        audio_arrays,
         sampling_rate=feature_extractor.sampling_rate,
         max_length=16000,
         truncation=True
     )
-    return inputs['input_values'][0]
+    label = [int(label2id[x]) for x in examples["label"]]
+    inputs["label"] = label
+    return inputs
 
-
-# early_stopping = EarlyStoppingCallback(early_stopping_patience=config.early_stopping_patience)
-
-device = "cuda"
-model = AutoModelForAudioClassification.from_pretrained(
-    inference_dir,
-    num_labels=len(label2id),
-    label2id=label2id,
-    id2label=id2label
-)
-
-# model.load_state_dict(torch.load(inference_dir / "model.safetensors"))
-model = model.to(device).eval()
 
 if __name__ == '__main__':
-<<<<<<< HEAD
-    files, true_labels, mapping = DirUtils.crawl_directory_dataset(sample_path, ext_filter=".wav", map_labels=True)
-=======
-    files, true_labels = DirUtils.crawl_directory_dataset(sample_path, ext_filter=".wav")
-    true_labels = [int(label2id[item]) for item in true_labels]
->>>>>>> 024406b (Update codes)
-    predictions = []
-    with torch.no_grad():
-        for sample_audio_path in tqdm(files):
-            audio_array = get_audio(sample_audio_path)
-            audio_array = torch.tensor(audio_array).to(device=device)
-            audio_array = audio_array[None, ...]
-            output = model(audio_array)
-            logits = output["logits"][0]
-            cls_index = torch.argmax(logits).item()
-            predictions.append(cls_index)
-            # print(f"class: {cls_index}, cls_name: {cls_name}")
-    print("f1_score: ", f1_score(true_labels, predictions, labels=list(true_labels), average="macro"))
-    print("precision_score: ", precision_score(true_labels, predictions, labels=list(true_labels), average="macro"))
-    print("accuracy_score: ", accuracy_score(true_labels, predictions))
-    print("recall_score: ", recall_score(true_labels, predictions, labels=list(true_labels), average="macro"))
+    config = Config()
+    best_model_path_ = "results/exp_1/best"
+    feature_extractor = AutoFeatureExtractor.from_pretrained(best_model_path_)
+    dataset = load_dataset('csv', data_files={'train': config.train_path,
+                                              'val': config.val_path, "test": config.test_path})
+    dataset = dataset.cast_column("audio_path", Audio(sampling_rate=config.target_sampling_rate))
+    labels = set(dataset["train"]['label'])
+    label2id, id2label = get_and_save_label2id(config.label2id_path, labels)
+    encoded_dataset = dataset.map(preprocess_function, remove_columns="audio_path", batched=True)
+
+    # early_stopping = EarlyStoppingCallback(early_stopping_patience=config.early_stopping_patience)
+
+    total_steps = int((np.ceil(encoded_dataset["train"].num_rows / config.per_device_train_batch_size) * config.num_train_epochs))
+
+    num_labels = len(id2label)
+    model = AutoModelForAudioClassification.from_pretrained(
+        best_model_path_, num_labels=num_labels, label2id=label2id, id2label=id2label
+    )
+
+    training_args = TrainingArguments(
+        output_dir=config.model_path,
+        # eval_strategy=config.evaluation_strategy,
+        evaluation_strategy=config.evaluation_strategy,
+        save_strategy=config.evaluation_strategy,
+        num_train_epochs=config.num_train_epochs,
+        report_to=config.report_to,
+        # load_best_model_at_end=config.load_best_model_at_end,
+        # save_total_limit=config.save_total_limit,
+        metric_for_best_model=config.metric_for_best_model,
+        per_device_train_batch_size=config.per_device_train_batch_size,
+        per_device_eval_batch_size=config.per_device_eval_batch_size,
+        logging_steps=config.logging_steps,
+        # gradient_checkpointing=True
+    )
+
+    # optimizer = torch.optim.AdamW(model.parameters(), lr=config.learning_rate)
+    # scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, warmup_cosine(config.warmup_steps,
+    #                                                                        max_lr=config.learning_rate,
+    #                                                                        total_steps=total_steps,
+    #                                                                        optimizer_lr=config.learning_rate,
+    #                                                                        min_lr=config.min_learning_rate))
+    # reduce lr with a cosine annealing if total_steps is set to total_steps
+    # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=total_steps)
+
+    trainer = Trainer(
+        model=model,
+        args=training_args,
+        train_dataset=encoded_dataset["train"],
+        eval_dataset=encoded_dataset["val"],
+        tokenizer=feature_extractor,
+        compute_metrics=compute_metrics,
+        # optimizers=(optimizer, scheduler)
+    )
+
+    tic = time()
+    # trainer.train()
+    print(f"[INFO] Time: {time() - tic}")
+    # trainer.save_model(join(config.model_path, config.file_name))
+    output = trainer.evaluate(eval_dataset=encoded_dataset["val"])
+    print("[INFO] Test evaluation", output)

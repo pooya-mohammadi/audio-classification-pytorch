@@ -1,5 +1,11 @@
 # Wav2Vec
 
+## Train
+```commandline
+CUDA_VISIBLE_DEVICES=1 python train.py
+```
+
+
 ## Lora:
 Activate python 310 then run:
 ```commandline
