@@ -70,7 +70,7 @@ if __name__ == '__main__':
 
     num_labels = len(id2label)
     model = AutoModelForAudioClassification.from_pretrained(
-        best_model_path_, num_labels=num_labels, label2id=label2id, id2label=id2label
+        best_model_path_
     )
 
     training_args = TrainingArguments(
@@ -112,6 +112,6 @@ if __name__ == '__main__':
     print(f"[INFO] Time: {time() - tic}")
     # trainer.save_model(join(config.model_path, config.file_name))
     output = trainer.evaluate(eval_dataset=encoded_dataset["val"])
-    print("[INFO] Test evaluation", output)
-    output = trainer.evaluate(eval_dataset=encoded_dataset["train"])
-    print("[INFO] train evaluation", output)
+    print("[INFO] val evaluation", output)
+    output = trainer.evaluate(eval_dataset=encoded_dataset["test"])
+    print("[INFO] test evaluation", output)
